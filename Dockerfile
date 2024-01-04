@@ -1,4 +1,4 @@
-FROM dockerproxy.com/library/node:18.18-alpine as builder
+FROM node:18.18-alpine as builder
 LABEL xkloveme xkloveme@gmail.com
 ENV NODE_ENV=production
 WORKDIR /app
