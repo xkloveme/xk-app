@@ -2,7 +2,6 @@ import express from "express";
 import bodyParser from "body-parser";
 import routes from "./express-routes/index.js";
 import http from "http";
-import { ConfigurationData } from "./config/index.js";
 import { WebSocketServer } from "ws";
 
 const app = express();
@@ -29,15 +28,15 @@ const main = async () => {
   app.use("/routes", routes);
 
   var server = http.createServer(app);
-  server.listen(ConfigurationData.server.port);
+  server.listen(5282);
   server.on("upgrade", (request, socket, head) => {
     wsServer.handleUpgrade(request, socket, head, (socket) => {
       wsServer.emit("connection", socket, request);
     });
   });
 
-  console.info(`Server started on port ${ConfigurationData.server.port}`);
-  console.info(`http://127.0.0.1:${ConfigurationData.server.port}`);
+  console.info(`Server started on port 5282`);
+  console.info(`http://127.0.0.1:5282`);
 };
 
 main().catch(console.error);

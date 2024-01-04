@@ -5,7 +5,7 @@ WORKDIR /app
 COPY ["package.json", "./"]
 RUN npm install --production --silent && mv node_modules ../
 COPY . .
-EXPOSE 6909
+EXPOSE 5282
 RUN chown -R node /app
 USER node
 CMD ["npm", "start"]
