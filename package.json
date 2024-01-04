@@ -1,37 +1,10 @@
 {
-  "name": "vue3-vite-express-js-boilerplate",
-  "description": "Dockerized Vue3 with Vite built using express and other various technologies for a quick boilerplate development stack",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "app.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "vite --mode development",
-    "build": "vite build --mode development",
-    "preview": "vite preview",
-    "start": "vite build --mode development && node app",
-    "prepare": "husky install"
-  },
-  "lint-staged": {
-    "**/*": "prettier --write --ignore-unknown"
-  },
-  "dependencies": {
-    "@vitejs/plugin-vue": "^4.2.3",
-    "dotenv": "^16.1.4",
-    "express": "^4.18.2",
-    "vue": "^3.3.4",
-    "vue-router": "^4.2.2",
-    "ws": "^8.13.0"
-  },
-  "devDependencies": {
-    "husky": "^8.0.3",
-    "lint-staged": "^13.2.2",
-    "prettier": "2.8.8",
-    "vite": "^4.3.9"
-  },
+  "name": "xk-app",
+  "description": "express vite",
+  "version": "1.1.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/willCode2Surf/vue3-vite-express-js-boilerplate.git"
+    "url": "git+https://github.com/xkloveme/xk-app.git"
   },
   "keywords": [
     "docker",
@@ -41,10 +14,38 @@
     "javascript",
     "boilerplate"
   ],
-  "author": "@WillCode2Surf (dustin.w.brown@gmail.com)",
+  "author": "@xkloveme (xkloveme@gmail.com)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/willCode2Surf/vue3-vite-express-js-boilerplate/issues"
+    "url": "https://github.com/xkloveme/xk-app/issues"
   },
-  "homepage": "https://github.com/willCode2Surf/vue3-vite-express-js-boilerplate#readme"
+  "homepage": "https://github.com/xkloveme/xk-app#readme",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite --mode development",
+    "build": "vite build --mode development",
+    "preview": "vite preview",
+    "start": "vite build --mode development && node app",
+    "prepare": "test -d node_modules/husky && husky install || echo \"husky is not installed\""
+  },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue": "^4.6.2",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "vue": "^3.4.4",
+    "vue-router": "^4.2.5",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1",
+    "vite": "^5.0.10"
+  }
 }

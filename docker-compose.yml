@@ -1,8 +1,8 @@
-version: "3.4"
+version: "3.8"
 
 services:
-  vue3viteexpressjsboilerplate:
-    image: vue3viteexpressjsboilerplate
+  xk-app:
+    image: xk-app:v${BUILD_VERSION}
     build:
       context: .
       dockerfile: ./Dockerfile
