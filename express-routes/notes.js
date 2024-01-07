@@ -1,10 +1,6 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const mime = require('mime');
-const crypto = require('crypto');
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 
 /**
@@ -41,7 +37,7 @@ function generateDirectoryTree (dir) {
 }
 
 
-exports.getTree = function (req, res) {
+export const getTree = function (req, res) {
   let dir = process.env[
     os.platform() === 'win32'
       ? 'APPDATA'

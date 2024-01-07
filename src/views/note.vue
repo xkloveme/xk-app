@@ -1,27 +1,28 @@
 <!--
  * @Date: 2023-02-13
- * @LastEditTime: 2023-02-19 21:15:17
+ * @LastEditTime: 2024-01-06 23:08:53
  * @LastEditors: xkloveme
  * @FileDesc:笔记
- * @FilePath: /watone-cli/app/src/views/note.vue
+ * @FilePath: /xk-app/src/views/note.vue
  * @Copyright © xkloveme
 -->
 <template>
   <div class="note">
     <div class="content-section implementation dock-demo">
-      <Toast />
-      <Toast position="top-center" group="tc" />
       <Menubar :model="menubarItems">
         <template #start>
-          <i class="pi pi-apple"></i>
+          <div class="i-uil-constructor"></div>
         </template>
         <template #end>
-          <i class="pi pi-video" />
-          <i class="pi pi-wifi" />
+
+          <i class="pi pi-server cursor-pointer text-sm"
+            v-tooltip="{ value: '显示/隐藏底部 dock', showDelay: 1000, hideDelay: 300 }" @click="dockShow = !dockShow" />
           <i class="pi pi-volume-up" />
           <span>Fri 13:07</span>
           <i class="pi pi-search" />
-          <i class="pi pi-bars" />
+          <i class="pi pi-moon cursor-pointer text-sm" v-tooltip="{ value: '主题切换', showDelay: 1000, hideDelay: 300 }" />
+          <i class="pi pi-bars cursor-pointer text-sm" @click="openVisibleRight"
+            v-tooltip="{ value: '文章目录', showDelay: 1000, hideDelay: 300 }" />
         </template>
       </Menubar>
 
@@ -29,21 +30,7 @@
         <!-- 分割线 -->
         <Splitter :style="{ height: '100%', width: '100%' }">
           <SplitterPanel :size="3" :minSize="0" v-show="showTree">
-            <div>
-              <Button @click="active = 0" class="p-button-sm p-0" aria-label="Finder"
-                :class="active == 0 ? 'p-button-raised p-button-text' : 'p-button-text'">
-                <i class="i-uil-books"></i>
-                <span class="px-1">文件夹</span>
-              </Button>
-              <Button @click="active = 1" class="p-button-sm p-0" aria-label="Git"
-                :class="active == 1 ? 'p-button-raised p-button-text' : 'p-button-text'">
-                <i class="i-uil-cloud-database-tree"></i>
-                <span class="px-1">Git</span>
-              </Button>
-            </div>
-            <Tree selectionMode="single" v-model:selectionKeys="selectedKey" :value="nodes" expandedIcon="folder"
-              collapsedIcon="pi pi-folder" :filter="true" filterMode="strict" @node-select="onNodeSelect"
-              @node-unselect="onNodeUnselect" />
+            <FileTree :nodes="nodes" @openText="getContent" />
           </SplitterPanel>
           <SplitterPanel>
             <codemirror v-model="editInput" placeholder="请输入" :style="{ height: '100%', width: '100%' }" :autofocus="true"
@@ -52,7 +39,7 @@
         </Splitter>
 
 
-        <Dock :model="dockItems">
+        <Dock :model="dockItems" v-show="dockShow">
           <template #item="{ item }">
             <a href="#" class="p-dock-link" v-tooltip.top="item.label" @click="onDockItemClick($event, item)">
               <img :alt="item.label" :src="item.icon" style="width: 100%" />
@@ -64,13 +51,25 @@
           :style="{ width: '60vw' }" :maximizable="true">
           <!-- <Terminal welcomeMessage="Welcome to PrimeVue(cmd: 'date', 'greet {0}', 'random' and 'clear')"
               prompt="primevue $" /> -->
-          <VMdPreview :text="editInput"></VMdPreview>
+          <!-- <VMdPreview :text="editInput"></VMdPreview> -->
         </Dialog>
 
         <Dialog v-model:visible="displayFinder" header="Finder" :breakpoints="{ '960px': '75vw', '640px': '100vw' }"
           :style="{ width: '60vw' }" :maximizable="true">
           <Tree :value="nodes" />
         </Dialog>
+        <Dialog v-model:visible="displaySafari" header="文档预览" :breakpoints="{ '960px': '75vw', '640px': '100vw' }"
+          :style="{ width: '60vw' }" :maximizable="true">
+          <VMdPreview ref="preview" :text="editInput"></VMdPreview>
+        </Dialog>
+        <!-- 右侧目录 -->
+        <Sidebar v-model:visible="visibleRight" header="文章目录" position="right">
+          <div v-for="anchor in titles" :style="{ padding: `10px 0 10px ${anchor.indent * 20}px` }"
+            >
+            <!-- @click="handleAnchorClick(anchor)" -->
+            <a style="cursor: pointer">{{ anchor.title }}</a>
+          </div>
+        </Sidebar>
 
         <Galleria v-model:visible="displayPhotos" :value="images" :responsiveOptions="responsiveOptions" :numVisible="2"
           containerStyle="width: 400px" :circular="true" :fullScreen="true" :showThumbnails="false"
@@ -86,18 +85,24 @@
 </template>
 
 <script setup>
+import $api from '@/api'
+import useStore from '@/store'
 import { Codemirror } from 'vue-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
 import PhotoService from './notes/PhotoService';
 import TerminalService from "primevue/terminalservice";
-
+import $toast from '@/toast';
+import FileTree from '@/components/FileTree.vue';
 import VMdPreview from '@kangc/v-md-editor/lib/preview';
 import '@kangc/v-md-editor/lib/style/preview.css';
 import githubTheme from '@kangc/v-md-editor/lib/theme/github.js';
 import '@kangc/v-md-editor/lib/theme/style/github.css';
 import hljs from 'highlight.js';
+import { debounce } from 'lodash'
+import Sidebar from 'primevue/sidebar';
 VMdPreview.use(githubTheme, { Hljs: hljs });
 
+const { useNoteStore } = useStore()
 let active = ref(0)
 let editInput = ref('')
 let extensions = [markdown()]
@@ -105,44 +110,61 @@ let showTree = ref(true)
 let displayFinder = ref(false);
 let displayTerminal = ref(false);
 let displayPhotos = ref(false);
+let displaySafari = ref(false);
+
 let photoService = ref(new PhotoService());
+let dockShow = ref(true)
 let images = ref();
 let nodes = ref();
-let selectedKey = ref(null)
-async function onNodeSelect (node) {
-  console.log("🐛 ~ file: note.vue:111 ~ onNodeSelect ~ node", node);
-  window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+let activePath = ref('');
+async function saveText () {
+  if (!activePath.value) return
+  let response = await $api.post('/webdav/putText', { path: activePath.value, content: editInput.value });
+  if (response) {
+    $toast.success('保存成功');
+  } else {
+    $toast.error('保存失败');
+  }
+}
+const debounceSaveText = debounce(saveText, 3000);
 
-window.requestFileSystem(window.TEMPORARY, 1024 * 1024, function(fs) {
-  fs.root.getFile(node.path, {}, function(fileEntry) {
-    fileEntry.file(function(file) {
-      const reader = new FileReader();
-      reader.onloadend = function() {
-        console.log(reader.result); // 输出文件内容
-      };
-      reader.readAsText(file);
-    });
-  });
-}, function(error) {
-  console.error(error);
-});
-  // const reader = new FileReader();
-  // const text =await reader.readAsText(node.path);
-  // const sandboxed_dir = await window.getSandboxedFileSystem();
-  // const new_file = await sandboxed_dir.getFile(node.path, {create: true});
-  // console.log("🐛 ~ file: note.vue:116 ~ onNodeSelect ~ new_file", text);
-  // this.$toast.add({severity:'success', summary: 'Node Selected', detail: node.label, life: 3000});
-}
-function onNodeUnselect (node) {
-  console.log("🐛 ~ file: note.vue:115 ~ onNodeUnselect ~ node", node);
-  // this.$toast.add({severity:'success', summary: 'Node Unselected', detail: node.label, life: 3000});
-}
 async function getTree () {
-  let response = await fetch('/api/notes/tree');
-  const data = await response.json();
-  nodes.value = data
-  console.log(nodes.value, data, 22)
+  let response = await $api.get('/webdav/list');
+  useNoteStore.setTreeList(response)
+  nodes.value = response
 }
+async function getContent (path) {
+  activePath.value = path
+  let response = await $api.get('/webdav/getText', { path });
+  editInput.value = response
+}
+let preview = ref(null)
+let visibleRight = ref(false)
+let titles = ref([]);
+function openVisibleRight () {
+  getContentTitle()
+  visibleRight.value = true
+}
+function getContentTitle () {
+  console.log("===🐛=== ~ file: note.vue:150 ~ getContentTitle ~ preview:", preview);
+  const anchors = preview.value.$el.querySelectorAll('h1,h2,h3,h4,h5,h6');
+  const titlesList = Array.from(anchors).filter((title) => !!title.innerText.trim());
+  console.log("===🐛=== ~ file: note.vue:152 ~ getContentTitle ~ titles:", titlesList);
+
+  if (!titlesList.length) {
+    titles.value = [];
+    return;
+  }
+
+  const hTags = Array.from(new Set(titlesList.map((title) => title.tagName))).sort();
+
+  titles.value = titlesList.map((el) => ({
+    title: el.innerText,
+    lineIndex: el.getAttribute('data-v-md-line'),
+    indent: hTags.indexOf(el.tagName),
+  }));
+}
+
 let imgErrorPath = ref('https://www.primefaces.org/wp-content/uploads/2020/05/placeholder.png');
 let dockItems = ref([
   {
@@ -170,7 +192,7 @@ let dockItems = ref([
     label: 'Safari',
     icon: "https://primefaces.org/cdn/primevue/images/dock/safari.svg",
     command: () => {
-      // toast.add({ severity: 'warn', summary: 'Safari has stopped working', group: 'tc', life: 3000 });
+      displaySafari.value = true;
     }
   },
   {
@@ -211,10 +233,6 @@ let dockBasicItems = ref([
   }
 ]);
 let menubarItems = ref([
-  {
-    label: 'Finder',
-    class: 'menubar-root'
-  },
   {
     label: 'File',
     items: [
@@ -384,6 +402,13 @@ function commandHandler (text) {
 onMounted(() => {
   images.value = photoService.value.getImages();
   getTree()
+  window.addEventListener('keydown', function (e) {
+    if (e.keyCode == 83 && (navigator.platform.match('Mac') ? e.metaKey : e.ctrlKey)) {
+      e.preventDefault();
+      debounceSaveText()
+    }
+  })
+
   TerminalService.on('command', commandHandler);
 })
 
@@ -448,4 +473,5 @@ onBeforeUnmount(() => {
       z-index: 2;
     }
   }
-}</style>
+}
+</style>

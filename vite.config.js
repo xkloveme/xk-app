@@ -21,12 +21,12 @@ export default defineConfig(({ mode, command }) => {
     server: {
       port: 15282,
       host: true,
-      open: true,
+      open: false,
       proxy: {
         "/api": {
-          target: "http://localhost:5282", // 本地node服务
+          target: "http://localhost:5282/api", // 本地node服务
           changeOrigin: true,
-          // rewrite: p => p.replace(/^\/api/, "")
+          rewrite: p => p.replace(/^\/api/, "")
         },
         "/socket.io": {
           target: "http://localhost:5282/socket.io", // 本地node服务

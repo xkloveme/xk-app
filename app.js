@@ -25,7 +25,7 @@ const main = async () => {
     })
   );
   app.use("/", express.static("dist"));
-  app.use("/routes", routes);
+  app.use("/api", routes);
 
   var server = http.createServer(app);
   server.listen(5282);

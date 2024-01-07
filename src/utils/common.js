@@ -20,6 +20,7 @@ tools.iconList={
   'Dust':'i-uil-cloud-sun', // 尘土
   'Sand':'i-uil-windsock', // 沙尘
   'Squall':'i-uil-cloud-showers', // 狂风骤雨
+
 }
 
 
